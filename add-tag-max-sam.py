@@ -12,7 +12,7 @@ import pysam
 from collections import Counter
 
 parser = argparse.ArgumentParser(description='Get a count of the maximum value of a specified SAM tag and output the count to a new tag.')
-parser.add_argument("-f", "--file", type=argparse.FileType('r'), 
+parser.add_argument("-i", "--input", type=argparse.FileType('r'), 
 					help="Input BAM file (must be indexed)")
 parser.add_argument("-o", "--output", type=argparse.FileType('w'), default=sys.stdout, 
 				 help="Output SAM file. Default: stdout")
@@ -23,7 +23,7 @@ parser.add_argument("-n", "--newtag", type=str, default="XP",
 
 args = parser.parse_args()
 
-samfile = pysam.AlignmentFile(args.file, "rb") # in.bam
+samfile = pysam.AlignmentFile(args.input, "rb") # in.bam
 #samfile = pysam.AlignmentFile("test.sam", "r") # in.sam
 outsam = pysam.AlignmentFile(args.output, "w", template=samfile, header=samfile.header, referencenames=samfile.references) # output sam
 #outsam = pysam.AlignmentFile("allpaired.bam", "wb", template=samfile, header=samfile.header, referencenames=samfile.references) # output bam
