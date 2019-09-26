@@ -24,64 +24,79 @@ parser.add_argument("-n", "--newtag", type=str, default="XP",
 
 args = parser.parse_args()
 
-#samfile = pysam.AlignmentFile(args.input, "rb") # in.bam
 samfile = pysam.AlignmentFile(args.input, "rb") # in.sam
-outsam = pysam.AlignmentFile(args.output, "w", template=samfile, header=samfile.header, referencenames=samfile.references) # output sam
-#outsam = pysam.AlignmentFile("allpaired.bam", "wb", template=samfile, header=samfile.header, referencenames=samfile.references) # output bam
+outsam = pysam.AlignmentFile(args.output, "w", template=samfile, header=samfile.header, referencenames=samfile.references) # output sam; "wb" for bam
 tag_scan = args.tag # "ms"
 tag_add = args.newtag # "XP"
 
+t0 = time.time()
+
 print("Getting the read occurence.")
 # First, make a list of reads and their selected tag value(s)
+names_all = []
+reads_tag = []
+reads_out = []
 name_list = [] # Make list of read names with the tag
 tag_list = [] # Make list of tags for the read names
 for read in samfile.fetch():
 	if read.has_tag(tag_scan):
 		name_list.append(read.query_name)
 		tag_list.append(read.get_tag(tag_scan))
+		reads_tag.append(read) # Make a big list of reads (~hash)
+	else: # If a read doesn't have a tag, write it out right away with 0 - not a fool proof solution but ok for now
+		read.tags += [(tag_add, 0)]
+#		outsam.write(read) # write the read imidiately
+		reads_out.append(read)
+
+# Save reads with no tag and empty list to save some memory
+for read in reads_out:
+	outsam.write(read)
+reads_out = []	
 
 reads = list(Counter(name_list).keys()) # Get read names of keys
 tags = list(Counter(name_list).values()) # Get tag values of keys 
 
-print("Adding the sam tag.")
-# Go through the bam file and if read doesn't have a tag give it value 0 to the new tag if it does but it's in the bam file only once give it a new tag with value 1; if it's there more times check the highest value of the tag and count how many times it was present and assign it to the new tag 
-counter = 1
-t0 = time.time()
+index = [i for i, x in enumerate(tags) if x > 1] # Get positions or reads present more than once
+reads_multi = [ reads[i] for i in index ] # Get their names
 
 max_vals = {} # Make empty dictionary of the max tag values
-for read in samfile.fetch():
-	if (counter % 1000) == 0:
-		print("Processed read no. " + str(counter))
-	counter += 1
-	if read.has_tag(tag_scan):
-		if read.query_name in max_vals: # if we already have the value of max value for the read directly fill it out
+for read_name in reads_multi:
+	index = [i for i, x in enumerate(name_list) if x == read_name] # Get positions or reads present more than once in the full read name list
+	reads_tag_in = [ reads_tag[i] for i in index ] # Get their reads
+	for read in reads_tag_in:
+		if read.query_name in max_vals:
 			read.tags += [(tag_add, max_vals.get(read.query_name))]
-			outsam.write(read)
+			reads_out.append(read)
 		else:
-			index = reads.index(read.query_name) # Find the read in the list and save position
-			if tags[index] > 1:
-				# index = name_list.index(read.query_name) # Only the first occurence
-				index = [i for i, x in enumerate(name_list) if x == read.query_name] # Make an index of all the possitions of the current read in the list
-				tag_list_r = [ tag_list[i] for i in index ] # Get the tag values of all the read lines
-	#			print(read.get_tag('tp', with_value_type=True)) # Get tag and it's value
-				max_val = tag_list_r.count(max(tag_list_r)) # Get the count of the max values for the read
-				read.tags += [(tag_add, max_val)] # Add the new tag
-				max_vals[read.query_name] = max_val # store the max value to a dictionary for the next time
-	#			tags_tmp = read.tags # Manually adding the tuple, just for excercise
-	#			tags_tmp.append(tuple(list((tag_add, 1))))
-	#			read,tags = tags_tmp
-				outsam.write(read)
-			else:
-				read.tags += [(tag_add, 1)]
-				outsam.write(read)	
-	else: # If a read doesn't have a tag, write it out right away with 0 - not a fool proof solution but ok for now
-		read.tags += [(tag_add, 0)]
-		outsam.write(read)
+			tag_list_r = [ tag_list[i] for i in index ] # get all tag values
+			max_val = tag_list_r.count(max(tag_list_r)) # find occurence of the highest
+			max_vals[read.query_name] = max_val # save to dictionary for the future
+			read.tags += [(tag_add, max_val)] # Add the new tag to the read
+			reads_out.append(read)
+
+# Save multi and empty list to save some memory
+for read in reads_out:
+	outsam.write(read)
+reads_out = []
+
+# get reads having the tag but present only once
+index = [i for i, x in enumerate(tags) if x == 1] # Get positions or reads present more than once
+reads_solo = [ reads[i] for i in index ] # Get their names
+
+for read_name in reads_solo:
+	index = [i for i, x in enumerate(name_list) if x == read_name] # Get positions or reads present more than once in the full read name list
+	reads_tag_in = [ reads_tag[i] for i in index ] # Get their reads
+	for read in reads_tag_in:
+		read.tags += [(tag_add, 1)]
+		reads_out.append(read)
+
+# Save singles
+for read in reads_out:
+	outsam.write(read)
 
 t1 = time.time()
 total = t1-t0
-
-print("It took :" + str(total))
+print("version 2 took :" + str(total))
 
 outsam.close()
 samfile.close()
