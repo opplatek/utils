@@ -3,19 +3,18 @@
 # Get the max tag value for a single read and add to all the corresponding reads
 # Initially designed for adding count of primary alignments to XP:i tag for Minimap2 alignments based on read name and a value of ms:i tag
 #
-# Input is indexed bam file, output is sam file
+# Input is sam file, output is sam file (unsorted)
 #
 
 import argparse
 import sys
-import pysam
-from collections import Counter
 import time
+from collections import defaultdict
 
 parser = argparse.ArgumentParser(description='Get a count of the maximum value of a specified SAM tag and output the count to a new tag.')
-parser.add_argument("-i", "--input", type=argparse.FileType('r'), 
-					help="Input BAM file (must be indexed)")
-parser.add_argument("-o", "--output", type=argparse.FileType('w'), default=sys.stdout, 
+parser.add_argument("-i", "--input", 
+					help="Input SAM file")
+parser.add_argument("-o", "--output", default=sys.stdout, 
 				 help="Output SAM file. Default: stdout")
 parser.add_argument("-t", "--tag", type=str, default="ms", 
 				help="Tag name to get the maximum from. Default: ms.")
@@ -24,80 +23,55 @@ parser.add_argument("-n", "--newtag", type=str, default="XP",
 
 args = parser.parse_args()
 
-samfile = pysam.AlignmentFile(args.input, "rb") # in.sam
-outsam = pysam.AlignmentFile(args.output, "w", template=samfile, header=samfile.header, referencenames=samfile.references) # output sam; "wb" for bam
 tag_scan = args.tag # "ms"
 tag_add = args.newtag # "XP"
 
 t0 = time.time()
 
-print("Getting the read occurence.")
-# First, make a list of reads and their selected tag value(s)
-names_all = []
-reads_tag = []
-reads_out = []
-name_list = [] # Make list of read names with the tag
-tag_list = [] # Make list of tags for the read names
-for read in samfile.fetch():
-	if read.has_tag(tag_scan):
-		name_list.append(read.query_name)
-		tag_list.append(read.get_tag(tag_scan))
-		reads_tag.append(read) # Make a big list of reads (~hash)
-	else: # If a read doesn't have a tag, write it out right away with 0 - not a fool proof solution but ok for now
-		read.tags += [(tag_add, 0)]
-#		outsam.write(read) # write the read imidiately
-		reads_out.append(read)
+f=open(args.input, "r").read()
+fout=open(args.output, "w")
+f1=f.split('\n')
+#lines = filter(None, (line.rstrip() for line in f1)) # Just to skip blank lines
+lines=f1
 
-# Save reads with no tag and empty list to save some memory
-for read in reads_out:
-	outsam.write(read)
-reads_out = []	
+reads = defaultdict(list)
+values = defaultdict(list)
+read_notag = []
+read_singletag = []
+read_multitag = []
 
-reads = list(Counter(name_list).keys()) # Get read names of keys
-tags = list(Counter(name_list).values()) # Get tag values of keys 
+# Get line number (index) of reads w/wo tag and for those with a tag get the values
+for line in range (len(lines)):
+    if lines[line].startswith('@'):
+ #       print("It's a header!")
+        fout.write(lines[line] + '\n')
+    elif [i for i in lines[line].split('\t')[11:] if i.startswith(tag_scan)]:
+#        print("Found it!")
+        reads[lines[line].split('\t')[0]].append(line) # Get index of reads
+        values[lines[line].split('\t')[0]].append([i for i in lines[line].split('\t')[11:] if i.startswith(tag_scan)][0].rsplit(':', 1)[1]) # Get read tag values
+    else:
+#        print("Didn't find it")
+        read_notag.append(line) # Get index of reads with no tag
 
-index = [i for i, x in enumerate(tags) if x > 1] # Get positions or reads present more than once
-reads_multi = [ reads[i] for i in index ] # Get their names
+reads_l = [v for k,v in reads.items()] # get only values from the dictinary
+values_l = [v for k,v in values.items()] # get only values from the dictinary
 
-max_vals = {} # Make empty dictionary of the max tag values
-for read_name in reads_multi:
-	index = [i for i, x in enumerate(name_list) if x == read_name] # Get positions or reads present more than once in the full read name list
-	reads_tag_in = [ reads_tag[i] for i in index ] # Get their reads
-	for read in reads_tag_in:
-		if read.query_name in max_vals:
-			read.tags += [(tag_add, max_vals.get(read.query_name))]
-			reads_out.append(read)
-		else:
-			tag_list_r = [ tag_list[i] for i in index ] # get all tag values
-			max_val = tag_list_r.count(max(tag_list_r)) # find occurence of the highest
-			max_vals[read.query_name] = max_val # save to dictionary for the future
-			read.tags += [(tag_add, max_val)] # Add the new tag to the read
-			reads_out.append(read)
+read_multitag = [i for i, x in enumerate([len(x) for x in reads_l]) if x > 1] # Get read with tags more than once https://stackoverflow.com/questions/6294179/how-to-find-all-occurrences-of-an-element-in-a-list
+read_singletag = [i for i, x in enumerate([len(x) for x in reads_l]) if x == 1] # Get read with only one tag
 
-# Save multi and empty list to save some memory
-for read in reads_out:
-	outsam.write(read)
-reads_out = []
+for x in read_multitag:
+	max_val = values_l[x].count(max(values_l[x]))
+	for i in reads_l[x]:
+		fout.write(lines[i] + '\t' + tag_add + ':i:' + str(max_val) + '\n')
 
-# get reads having the tag but present only once
-index = [i for i, x in enumerate(tags) if x == 1] # Get positions or reads present more than once
-reads_solo = [ reads[i] for i in index ] # Get their names
+flat_list_single = [item for sublist in [reads_l[i] for i in read_singletag] for item in sublist] # Unlist the stupid list https://stackoverflow.com/questions/952914/how-to-make-a-flat-list-out-of-list-of-lists
 
-for read_name in reads_solo:
-	index = [i for i, x in enumerate(name_list) if x == read_name] # Get positions or reads present more than once in the full read name list
-	reads_tag_in = [ reads_tag[i] for i in index ] # Get their reads
-	for read in reads_tag_in:
-		read.tags += [(tag_add, 1)]
-		reads_out.append(read)
+for i in flat_list_single:
+	fout.write(lines[i] + '\t' + tag_add + ':i:1' + '\n')
+for i in read_notag:
+	fout.write(lines[i] + '\t' + tag_add + ':i:0' + '\n')
 
-# Save singles
-for read in reads_out:
-	outsam.write(read)
 
-t1 = time.time()
-total = t1-t0
-print("version 2 took :" + str(total))
+fout.close()
 
-outsam.close()
-samfile.close()
-
+print("Don't forget to resort the SAM!")
