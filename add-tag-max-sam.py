@@ -13,8 +13,8 @@ from collections import defaultdict
 
 parser = argparse.ArgumentParser(description='Get a count of the maximum value of a specified SAM tag and output the count to a new tag.')
 parser.add_argument("-i", "--input", 
-					help="Input SAM file")
-parser.add_argument("-o", "--output", default=sys.stdout, 
+					help="Input SAM file. Default: stdin")
+parser.add_argument("-o", "--output", 
 				 help="Output SAM file. Default: stdout")
 parser.add_argument("-t", "--tag", type=str, default="ms", 
 				help="Tag name to get the maximum from. Default: ms.")
@@ -28,11 +28,18 @@ tag_add = args.newtag # "XP"
 
 t0 = time.time()
 
-f=open(args.input, "r").read()
-fout=open(args.output, "w")
-f1=f.split('\n')
-#lines = filter(None, (line.rstrip() for line in f1)) # Just to skip blank lines
-lines=f1
+# Read input
+if args.input:
+    f=open(args.input, "r").read()
+else:
+    f=sys.stdin.read()
+lines=f.split('\n')
+
+# Get output
+if args.output:
+    fout=open(args.output, "w")
+else:
+    fout=sys.stdout
 
 reads = defaultdict(list)
 values = defaultdict(list)
@@ -45,13 +52,16 @@ for line in range (len(lines)):
     if lines[line].startswith('@'):
  #       print("It's a header!")
         fout.write(lines[line] + '\n')
-    elif [i for i in lines[line].split('\t')[11:] if i.startswith(tag_scan)]:
+    elif [i for i in lines[line].split('\t')[11:] if i.startswith(tag_scan+":")]:
 #        print("Found it!")
         reads[lines[line].split('\t')[0]].append(line) # Get index of reads
-        values[lines[line].split('\t')[0]].append([i for i in lines[line].split('\t')[11:] if i.startswith(tag_scan)][0].rsplit(':', 1)[1]) # Get read tag values
+        values[lines[line].split('\t')[0]].append([i for i in lines[line].split('\t')[11:] if i.startswith(tag_scan+":")][0].rsplit(':', 1)[1]) # Get read tag values
     else:
 #        print("Didn't find it")
-        read_notag.append(line) # Get index of reads with no tag
+        if not lines[line].strip(): # Skip empty lines
+            continue
+        else:
+            read_notag.append(line) # Get index of reads with no tag
 
 reads_l = [v for k,v in reads.items()] # get only values from the dictinary
 values_l = [v for k,v in values.items()] # get only values from the dictinary
@@ -71,7 +81,7 @@ for i in flat_list_single:
 for i in read_notag:
 	fout.write(lines[i] + '\t' + tag_add + ':i:0' + '\n')
 
-
-fout.close()
+if args.output:
+    fout.close()
 
 print("Don't forget to resort the SAM!")
