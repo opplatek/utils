@@ -84,4 +84,4 @@ for i in read_notag:
 if args.output:
     fout.close()
 
-print("Don't forget to resort the SAM!")
+#print("Don't forget to resort the SAM!")
