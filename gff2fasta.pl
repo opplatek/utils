@@ -7,11 +7,11 @@ use Bio::SeqIO;
 use Bio::DB::Fasta;
 
 #add a help message here
-#my $num_args=$#ARGV + 1;
-#if ($num_args != 4) {
-#	print "\nUsage: gff2perl Genome.fasta Annotation.gff OutputPrefix \n\n";
-#	exit;
-#}
+my $num_args=$#ARGV + 1;
+if ($num_args != 4) {
+	print "\nUsage: gff2perl Genome.fasta Annotation.gff OutputPrefix \n\n";
+	exit;
+}
 
 $| = 1;    # Flush output
 my $outfile_cds = Bio::SeqIO->new( -format => 'fasta', -file => ">$ARGV[2].cds.fasta" );
