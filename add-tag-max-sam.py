@@ -70,9 +70,10 @@ read_multitag = [i for i, x in enumerate([len(x) for x in reads_l]) if x > 1] # 
 read_singletag = [i for i, x in enumerate([len(x) for x in reads_l]) if x == 1] # Get read with only one tag
 
 for x in read_multitag:
-	max_val = values_l[x].count(max(values_l[x]))
-	for i in reads_l[x]:
-		fout.write(lines[i] + '\t' + tag_add + ':i:' + str(max_val) + '\n')
+    values_x = [int(i) for i in values_l[x]] # Make sure the values are int and not str otherwise max() doesn't work properly
+    max_val = values_x.count(max(values_x))
+    for i in reads_l[x]:
+        fout.write(lines[i] + '\t' + tag_add + ':i:' + str(max_val) + '\n')
 
 flat_list_single = [item for sublist in [reads_l[i] for i in read_singletag] for item in sublist] # Unlist the stupid list https://stackoverflow.com/questions/952914/how-to-make-a-flat-list-out-of-list-of-lists
 
