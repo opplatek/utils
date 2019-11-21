@@ -20,6 +20,8 @@ parser.add_argument("-t", "--tag", type=str, default="ms",
 				help="Tag name to get the maximum from. Default: ms.")
 parser.add_argument("-n", "--newtag", type=str, default="XP", 
 				help="Tag name to add the count of maximum value of --tag. Default: XP.")
+parser.add_argument("-n2", "--newtag2", type=str, default="XN", 
+                help="Tag name to determine 'the best primary hit' from --tag. Default: XN.")
 
 args = parser.parse_args()
 
