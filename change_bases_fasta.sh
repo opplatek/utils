@@ -3,7 +3,7 @@
 # Change particular bases in fasta based on position
 #
 
-pos=58.txt
+pos=58.txt # head1 1 T - change chr 'head1' position '1' to 'T'
 fasta=201801758.assembly.fa
 
 # linearize

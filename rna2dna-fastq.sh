@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 # converts RNA fastq to DNA fastq 
 # converts u/U to t/T on every 4th line starting from 2nd line
 
