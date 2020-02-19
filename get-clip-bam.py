@@ -87,28 +87,32 @@ for s in infile.fetch():
  #       str(s.get_tag(args.clipL)) + "\t" + args.clipR + ":" + str(s.get_tag(args.clipR)) + "\t" + list(str(s).split("\t"))[11] + '\n'
  
         # https://pysam.readthedocs.io/en/latest/release.html#release-0-8-1 
-        print(s.next_reference_start)
-
-        if type(s.next_reference_start) is "NoneType":
+        if type(s.next_reference_start) is None:
             next_ref = s.next_reference_start
         else:
-            next_ref = str(s.next_reference_start)
+            next_ref = str(s.next_reference_start + 1)
 
-        if type(s.query_sequence) is "NoneType":
+        if type(s.query_sequence) is None:
             seque = s.query_sequence
         else:
             seque = str(s.query_sequence)
 
-        if type(s.query_qualities) is "NoneType":
+        if type(s.query_qualities) is None:
             qual = s.query_qualities
         else:
             qual = str(s.query_qualities)
 
+        if type(s.next_reference_id) is int:
+            next_ref_id = str("*")
+        else:
+            next_ref_id = s.next_reference_id
+
         s = s.query_name + '\t' + str(s.flag) + '\t' + s.reference_name + '\t' + \
-        str(s.reference_start) + '\t' + str(s.mapping_quality) + '\t' + s.cigarstring + \
-        '\t' + str(s.next_reference_id) + '\t' + next_ref + '\t' + str(s.template_length) + \
+        str(s.reference_start + 1) + '\t' + str(s.mapping_quality) + '\t' + s.cigarstring + \
+        '\t' + next_ref_id + '\t' + next_ref + '\t' + str(s.template_length) + \
         '\t' + seque + '\t' + args.clipL + ":" + str(s.get_tag(args.clipL)) + \
         "\t" + args.clipR + ":" + str(s.get_tag(args.clipR)) + '\t' + '\t'.join(str(v) for v in s.tags) + '\n'
+        # For some reason s.reference_start is at the end 1 less than in SAM file
 #'\t' + seque + '\t' + qual + '\t' + args.clipL
 
     outfile.write(s)
