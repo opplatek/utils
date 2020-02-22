@@ -10,8 +10,7 @@ if [[ $# -eq 0 ]] ; then
 fi
 
 if [[ $# -eq 1 ]] ; then
-	echo 'Converting ${1} to DNA (U->T or u->t)'
-	
+#	echo 'Converting ${1} to DNA (U->T or u->t)'
 	sed '/^[^>]/ y/uU/tT/' $1 
 else
 	echo 'Please enter EXACTLY one argument - one RNA (Uu) fasta to be converted to DNA (Tt).'
