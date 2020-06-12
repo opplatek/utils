@@ -25,7 +25,6 @@ parser.add_argument("-n", "--newtag", type=str, default="XP",
 parser.add_argument("-n2", "--newtag2", type=str, default="XN", 
 				help="Tag name to add the count of maximum value of --tag. Can be 0 for no value, any number for number of max values. Default: XN.")
 
-
 args = parser.parse_args()
 
 tag_scan = args.tag # "ms"
