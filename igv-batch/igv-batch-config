@@ -1,0 +1,13 @@
+new
+genome /home/joppelt/projects/rna_degradation/data/hg38/genome/genome.fa
+load /home/joppelt/projects/rna_degradation/samples/hsa.RIBOSeq.HEK293T.WT.PRJNA548813.1/align/test.Aligned.sortedByCoord.out.bam
+snapshotDirectory /home/joppelt/Downloads/
+preference SAM.SHOW_SOFT_CLIPPED true
+goto 12:112022058-112022719
+sort position
+snapshot test.png
+goto 12:112022150-112022250
+sort position
+snapshot test-zoom.png
+exit
+
