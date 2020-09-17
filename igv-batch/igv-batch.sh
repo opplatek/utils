@@ -22,4 +22,4 @@ xvfb-run --auto-servernum --server-num=1 java -showversion --module-path="${pref
     -Dapple.laf.useScreenMenuBar=true \
     -Djava.net.preferIPv4Stack=true \
     --module=org.igv/org.broad.igv.ui.Main "$@" \
-	-b ${prefix}/igv-batch-config
+    -b ${prefix}/igv-batch-config
