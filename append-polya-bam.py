@@ -48,21 +48,27 @@ bamfile.close()
 os.system("rm tmp")
 
 #loop over lengths and change alignments
-for keys in alignments:
-
+#for keys in alignments:
+for key in list(alignments.keys()): # we can remove from dict when iterating
+#    print(key)
     #in case we don't have polya length in the set 0
-    if keys in sequences and sequences[keys] > 0:
-        if alignments[keys][0][1] == '0': #if strand minus
-            alignments[keys][0][5] = alignments[keys][0][5] + str(sequences[keys]) + "X" #change CIGAR; we can use "M" but "X" will highlight the added nucleotides
-            alignments[keys][0][9] = alignments[keys][0][9] + 'A' * sequences[keys] #append polyA - Note: at some point might be worth to edit this part to get mismatches in Ts aligning to genome
-            alignments[keys][0][10] = alignments[keys][0][10] + "?" * sequences[keys] #change quality score
-        elif alignments[keys][0][1] == '16': #same for strand plus
-            alignments[keys][0][3] = str(int(alignments[keys][0][3]) - sequences[keys]) #change leftmost aligment coordinate
-            alignments[keys][0][5] = str(sequences[keys]) + "X" + alignments[keys][0][5] #change cigar
-            alignments[keys][0][9] = 'A' * sequences[keys] + alignments[keys][0][9] #append polyA; we should add "T" for reverse-mapped reads but for Gviz visualization we add "A"
-            alignments[keys][0][10] = "?" * sequences[keys] + alignments[keys][0][10] #change quality score
+    if key in sequences and sequences[key] >= 0:
+        if sequences[key] > 0:
+            if alignments[key][0][1] == '0': #if strand minus
+                alignments[key][0][5] = alignments[key][0][5] + str(sequences[key]) + "X" #change CIGAR; we can use "M" but "X" will highlight the added nucleotides
+                alignments[key][0][9] = alignments[key][0][9] + 'A' * sequences[key] #append polyA - Note: at some point might be worth to edit this part to get mismatches in Ts aligning to genome
+                alignments[key][0][10] = alignments[key][0][10] + "?" * sequences[key] #change quality score
+            elif alignments[key][0][1] == '16': #same for strand plus
+                alignments[key][0][3] = str(int(alignments[key][0][3]) - sequences[key]) #change leftmost aligment coordinate
+                alignments[key][0][5] = str(sequences[key]) + "X" + alignments[key][0][5] #change cigar
+                alignments[key][0][9] = 'A' * sequences[key] + alignments[key][0][9] #append polyA; we should add "T" for reverse-mapped reads but for Gviz visualization we add "A"
+                alignments[key][0][10] = "?" * sequences[key] + alignments[key][0][10] #change quality score
+#            else:
+#                print(key + ": " + "read doesn't have polyA tail, keeping as original.")
     else:
-        print(keys + ": " + "read not present in polya file or polya length is bellow 0") # Nanopolish put "-1.00" for reads it failed to load (READ_FAILED_LOAD)
+        print(key + ": " + "read not present in polya file or polya length is negative, removing from alignment.") # Nanopolish put "-1.00" for reads it failed to load (READ_FAILED_LOAD)
+#        
+        del alignments[key] # remove read from alignment since we don't know nothing about the tail, it wasn't called but it doesn't mean it's not there
 
 #write sam output
 with open('tmp', 'w') as outfile:
