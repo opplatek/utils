@@ -3,7 +3,6 @@
 import sys
 import re
 
-##
 ## Author: https://gist.github.com/jqsunac/aeca04ee2c5b5cc53ad795b660edd6c3
 ##
 ## Description:
