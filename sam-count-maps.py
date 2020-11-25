@@ -103,7 +103,7 @@ for key, value in counts.items():
     
     for element in lines_read:
 #        print(element)
-        z = re.search('\tX0:i:[0-9]+', element)
+        z = re.search('\t'+tag_add+':i:[0-9]+', element)
         if z is None: # If there is not match
             fout.write(element + '\t' + tag_add + ':i:' + str(value) + '\n') # Add "number of alignments" tag
         else: # If there is a match
