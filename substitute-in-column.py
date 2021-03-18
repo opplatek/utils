@@ -8,15 +8,15 @@ import argparse
 import sys
 
 parser = argparse.ArgumentParser(description='Substitute strings in a column with patterns in a substitution table.')
-parser.add_argument("-i", "--input", type=str, 
+parser.add_argument("-i", "--input", type=str,
                     help="Input file where we'll substitute. Default: stdin")
-parser.add_argument("-o", "--output", type=str, 
+parser.add_argument("-o", "--output", type=str,
                  help="Output file with finished substitutions. Default: stdout")
-parser.add_argument("-t", "--table", type=str, 
+parser.add_argument("-t", "--table", type=str,
                  help="Table with two columns for substitution. First column is what to substitute, second what to substitute with. Tab separated.")
-parser.add_argument("-s", "--sep", type=str, default="\t", 
+parser.add_argument("-s", "--sep", type=str, default="\t",
                 help="Column separator in the input file (where we'll substitute). Default: \"\t\"")
-parser.add_argument("-c", "--column", type=int, default=1, 
+parser.add_argument("-c", "--column", type=int, default=1,
                 help="Column number where strings are to be substituted (where we'll substitute). One-based. Default: 1")
 
 args = parser.parse_args()
@@ -25,7 +25,7 @@ args = parser.parse_args()
 intab = args.input
 otab = args.output
 repl_tab = args.table
-repl_col = args.column 
+repl_col = args.column
 separ = args.sep
 
 # intab = "in.bed"
@@ -53,7 +53,8 @@ subs_lines = subs.readlines()
 subs_lines_dict = {}
 for line in subs_lines:
     line = line.strip().split("\t")
-    subs_lines_dict[line[0]] = line[1]
+    if len(line) == 2:
+        subs_lines_dict[line[0]] = line[1]
 
 # Read input file lines and replace specified column if found in substitution file
 for line in f:
