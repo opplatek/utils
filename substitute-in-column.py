@@ -3,6 +3,8 @@
 # Substitute a column in tab separated file using 'pattern' in from a tab separated file. First column in the 'pattern' tab separated file is the original string to be replaced, second is the new string.
 # Useful to convert, for example, UCSC to Ensembl chromosome names in bed files (primary design). A great resource for chromosome replacement is Devon Ryan's github repository https://github.com/dpryan79/ChromosomeMappings
 #
+# TODO: add option to exclude (default: false) rows which are not in the substitute table
+#
 
 import argparse
 import sys
@@ -15,7 +17,7 @@ parser.add_argument("-o", "--output", type=str,
 parser.add_argument("-t", "--table", type=str,
                  help="Table with two columns for substitution. First column is what to substitute, second what to substitute with. Tab separated.")
 parser.add_argument("-s", "--sep", type=str, default="\t",
-                help="Column separator in the input file (where we'll substitute). Default: \"\t\"")
+                help="Column separator in the input file (where we'll substitute). Default: tab")
 parser.add_argument("-c", "--column", type=int, default=1,
                 help="Column number where strings are to be substituted (where we'll substitute). One-based. Default: 1")
 
