@@ -19,7 +19,7 @@ fi
 if [ -f $in_gtf ] ; then
     case $in_gtf in
        *.gtf)   (grep "^#" $in_gtf; grep -v "^#" $in_gtf | sort --parallel=$threads -T $(dirname $in_gtf) -k1,1 -k4,4n) > ${in_gtf%.gtf}.sorted.gtf    ;;
-       *.gtf.gz)   (zgrep "^#" $in_gtf; zgrep -v "^#" $in_gtf | sort --parallel=$threads -T $(dirname $in_gtf) -k1,1 -k4,4n) | gzip > ${in_gtf%.gtf.gz}.sorted.gtf.gz    ;;
+       *.gtf.gz)   (zgrep "^#" $in_gtf; zgrep -v "^#" $in_gtf | sort --parallel=$threads -T $(dirname $in_gtf) -k1,1 -k4,4n) | gzip -c > ${in_gtf%.gtf.gz}.sorted.gtf.gz    ;;
        *)           echo "don't know how to extract '$in_gtf'..." ;;
     esac
 else
@@ -30,4 +30,4 @@ fi
 #(grep "^#" $in_gtf; grep -v "^#" $in_gtf | sort -k1,1 -k4,4n) > ${in_gtf%.gtf}.sorted.gtf
 
 # Sort compressed GTF
-#(zgrep "^#" $in_gtf; zgrep -v "^#" $in_gtf | sort -k1,1 -k4,4n) | gzip > ${in_gtf%.gtf}.sorted.gtf.gz
+#(zgrep "^#" $in_gtf; zgrep -v "^#" $in_gtf | sort -k1,1 -k4,4n) | gzip -c > ${in_gtf%.gtf}.sorted.gtf.gz
