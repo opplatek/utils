@@ -39,7 +39,6 @@ opt <- parse_args(OptionParser(option_list = option_list))
 # opt$five_utr<-50
 # opt$three_utr<-100
 # opt$input<-"/home/jan/projects/mourelatos11/projects/rna_degradation/data/sc3/genes.gtf"
-# opt$input<-"/home/jan/projects/mourelatos11/projects/rna_degradation/data/sc3/test.gtf"
 # opt$output<-"/home/jan/projects/mourelatos11/projects/rna_degradation/data/sc3/genes.withUtr.gtf"
 # genome_size<-"/home/jan/projects/mourelatos11/projects/rna_degradation/data/sc3/genome/genome.fa.fai"
 ### TESTING VARIABLES ###
@@ -58,12 +57,21 @@ extend <- function(x, upstream = 0, downstream = 0) {
   trim(x)
 }
 
-other <- gtf[gtf$type != "start_codon" & gtf$type != "stop_codon"]
+#other <- gtf[gtf$type != "start_codon" & gtf$type != "stop_codon"]
+other <- gtf # keep the original annotation to shift the exon numbers
 
 plus_start <- gtf[strand(gtf) == "+" & gtf$type == "start_codon"]
 minus_start <- gtf[strand(gtf) == "-" & gtf$type == "start_codon"]
 plus_stop <- gtf[strand(gtf) == "+" & gtf$type == "stop_codon"]
 minus_stop <- gtf[strand(gtf) == "-" & gtf$type == "stop_codon"]
+
+# Fix gbkey if exists not to confuse us
+if(any(colnames(gtf@elementMetadata) == "gbkey")){
+  plus_start$gbkey<-"mRNA"
+  minus_start$gbkey<-"mRNA"
+  plus_stop$gbkey<-"mRNA"
+  minus_stop$gbkey<-"mRNA"
+}
 
 utr5_plus <- extend(plus_start[plus_start$type == "start_codon", ], upstream = opt$five_utr, downstream = 0)
 end(utr5_plus) <- start(plus_start) - 1 
