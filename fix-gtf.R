@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 #
-# Fix gtf - renames duplicates transcript names and adds missing biotypes
+# Fix gtf - renames duplicates transcript names; adds missing biotypes; remove semicolon in description fields
 # Designed to fix NCBI sc3 gtf annotation
 #
 
@@ -97,6 +97,14 @@ if("transcript_biotype" %in% names(gtf@elementMetadata)){
     left_join(biotypes)
 
   gtf$transcript_biotype<-df$transcript_biotype
+}
+
+# Remove ";" in the metafield - causes problems with some software because they think it's a new field
+#gtf@elementMetadata<-as.data.frame(apply(gtf@elementMetadata, 2, function(x) gsub(";", ",", x))) # Doesn't work because it's not possible to assign data.frame to S4 - we have to go column by column
+df <- as.data.frame(gtf@elementMetadata) 
+df<-as.data.frame(apply(df, 2, function(x) gsub(";", ",", x)))
+for(col in colnames(df)){
+  gtf@elementMetadata[col]<-df[col]
 }
 
 if(opt$output=="stdout"){
