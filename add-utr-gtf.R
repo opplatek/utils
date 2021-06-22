@@ -12,6 +12,7 @@
 
 library("optparse")
 suppressPackageStartupMessages(library("dplyr"))
+#suppressPackageStartupMessages(library("GenomicRanges")) # loaded by rtracklayer
 suppressPackageStartupMessages(library("rtracklayer"))
 
 # Function to extend 5'UTR and 3'UTR by xx bp upstream (5' UTR) or downstream (3' UTR); https://support.bioconductor.org/p/78652/
@@ -46,7 +47,12 @@ option_list <- list(
   make_option(
     c("-o", "--output"),
     type = "character",
-    help = "GTF with added UTRs (as three_prime_utr, five_prime_utr, and exons)", metavar = "File"
+    help = "GTF with added UTRs (as three_prime_utr, five_prime_utr, and exons)", metavar = "File",
+  ),
+    make_option(
+      c("-g", "--gen_ind"),
+      type = "character",
+      help = "Chromosome sizes (chr\tchr_size). For example .fai from samtools faidx.", metavar = "File"  
   )
 )
 opt <- parse_args(OptionParser(option_list = option_list))
