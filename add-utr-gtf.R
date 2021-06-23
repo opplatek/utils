@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 #
 # Adds 'fake' 5' UTR and 3' UTR by extending specified number of nt before/after start/stop codon
-# The UTR nucleotides are added to first/last annotated exon, not as separate exons (there is no 
+# The UTR nucleotides are added to first/last annotated exon, not as separate exons (there is no
 #   intron in between so it shouldn't be a separate exon)
 # Very simple, primarily done for one of the yeast projects
 #
@@ -52,7 +52,7 @@ option_list <- list(
     make_option(
       c("-g", "--gen_ind"),
       type = "character",
-      help = "Chromosome sizes (chr\tchr_size). For example .fai from samtools faidx.", metavar = "File"  
+      help = "Chromosome sizes (chr\tchr_size). For example .fai from samtools faidx.", metavar = "File"
   )
 )
 opt <- parse_args(OptionParser(option_list = option_list))
@@ -85,7 +85,7 @@ plus_stop <- gtf[strand(gtf) == "+" & gtf$type == "stop_codon"]
 minus_stop <- gtf[strand(gtf) == "-" & gtf$type == "stop_codon"]
 
 # Fix gbkey if exists not to confuse us
-if(any(colnames(gtf@elementMetadata) == "gbkey")){
+if(any(colnames(elementMetadata(gtf)) == "gbkey")){
   plus_start$gbkey <- "mRNA"
   minus_start$gbkey <- "mRNA"
   plus_stop$gbkey <- "mRNA"
@@ -132,16 +132,16 @@ utr3$type <- "three_prime_utr"
 # utr3$exon_number<-shift
 
 print("Number of potentially overlapping UTRs (5UTRs, 3UTRs, 5&3UTRs")
-findOverlaps(utr5, utr5) %>% 
-  as.data.frame() %>% 
+findOverlaps(utr5, utr5) %>%
+  as.data.frame() %>%
   filter(queryHits != subjectHits) %>%
   nrow()
-findOverlaps(utr3, utr3) %>% 
-  as.data.frame() %>% 
+findOverlaps(utr3, utr3) %>%
+  as.data.frame() %>%
   filter(queryHits != subjectHits) %>%
   nrow()
-findOverlaps(utr5, utr3) %>% 
-  as.data.frame() %>% 
+findOverlaps(utr5, utr3) %>%
+  as.data.frame() %>%
   filter(queryHits != subjectHits) %>%
   nrow()
 
@@ -187,9 +187,9 @@ out$rows<-NULL
 # Fix chromosome overflowing
 start(out)[start(out)<0]<-1
 
-out$chr_end <- out %>% 
-  as.data.frame() %>% 
-  left_join(gen_ind) %>% 
+out$chr_end <- out %>%
+  as.data.frame() %>%
+  left_join(gen_ind) %>%
   pull(chr_end)
 end(out)[end(out)>out$chr_end]<-out$chr_end[end(out)>out$chr_end]
 out$chr_end<-NULL
