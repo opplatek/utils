@@ -1,10 +1,15 @@
 #!/usr/bin/python3
 #
-# Take paired-end BAM, get only first-in-pair read and change SAM flags so it looks like it's single-end
+# Take paired-end BAM, get only first|second in a pair read and change SAM flags so it looks like it's single-end
 #
 # https://bioinformatics.stackexchange.com/questions/9228/convert-paired-end-bam-into-a-single-end-bam-and-keep-all-the-reads
 #
+# First argument "first"|"second" - which read to keep
+# Second argument - input bam
+# Third argument - outpu bam
+#
 
+import sys
 import pysam
 
 paired =         1
@@ -14,13 +19,24 @@ mate_reverse =   32
 first_in_pair =  64
 second_in_pair = 128
 
-ibam = "samples/sc.PARESeq.polya.WT.1/align/reads.1.Aligned.final.bam"
-obam = "samples/sc.PARESeq.polya.WT.1/align/reads.1.Aligned.final.SE.bam"
+print(sys.argv)
+
+pair = sys.argv[1] # first|second in a pair to preserve
+ibam = sys.argv[2] # Input bam
+obam = sys.argv[3] # Output bam
+
+if pair == "first":
+    keep = first_in_pair
+elif pair == "second":
+    keep = second_in_pair
+else:
+    print("Please, use \"first\" or \"second\" as first argument to select which read of the pair to keep in the output.")
+    sys.exit()
 
 bam_in = pysam.AlignmentFile(ibam, "rb")
 bam_out = pysam.AlignmentFile(obam, "wb", template=bam_in)
 for line in bam_in:
-    if line.flag & second_in_pair:
+    if line.flag & keep:
 #        line.pos += line.template_length
         continue
 #    line.next_reference_id = 0
