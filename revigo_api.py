@@ -92,9 +92,11 @@ for i in namespace:
     with open('RevigoScatterplot-' + name + '.R') as f:
         if "Error: The namespace" not in f.readline():
             os.system('R CMD BATCH ' + 'RevigoScatterplot-' + name + '.R')
-            os.remove("Rplots.pdf") # remove default figure
+            if os.path.exists('Rplots.pdf'): # in case R failed (possibly no ggplot2 library
+                os.remove('Rplots.pdf') # remove default figure
 
     with open('RevigoTree-' + name + '.R') as f:
         if "Error: The namespace" not in f.readline():
             os.system('R CMD BATCH ' + 'RevigoTree-' + name + '.R')
-            os.rename('revigo_treemap.pdf', 'RevigoTree-' + name + '.pdf')
+            if os.path.exists('revigo_treemap.pdf'): # in case R failed (possibly no treemap library
+                os.rename('revigo_treemap.pdf', 'RevigoTree-' + name + '.pdf')
