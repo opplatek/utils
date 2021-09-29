@@ -33,53 +33,60 @@ library("RColorBrewer")
 library("ggplot2")
 library("ggrepel")
 
-
 volcano_plot <- function(data,condition1,condition2,threshold){
   resdata<-as.data.frame(data)
   resdata$gene<-rownames(data)
   resdata<-resdata[complete.cases(resdata),]
-  resdata$Legend<- ifelse(resdata$padj < 0.05 & abs(resdata$log2FoldChange)>1,"padj < 0.05 & FC > 2",
+  resdata$Legend<- ifelse(resdata$padj < 0.05 & abs(resdata$log2FoldChange)>=1,"padj < 0.05 & FC >= 2",
                         ifelse(resdata$padj < 0.05,"padj < 0.05",
-                               ifelse(abs(resdata$log2FoldChange)>1, "FC > 2",
+                               ifelse(abs(resdata$log2FoldChange)>=1, "FC >= 2",
                                       "Nonsignificant"
                                )))
-  top_genes<-resdata[resdata$Legend=="padj < 0.05 & FC > 2",]
-  top_genes<-top_genes[order(top_genes$baseMean,abs(top_genes$log2FoldChange),decreasing=TRUE),]
+  top_genes<-resdata[resdata$Legend=="padj < 0.05 & FC >= 2",]
+  #top_genes<-top_genes[order(top_genes$baseMean,abs(top_genes$log2FoldChange),decreasing=TRUE),]
+  top_genes<-top_genes[order(-abs(top_genes$log2FoldChange),-top_genes$baseMean),]
   top_genes<-head(top_genes,threshold)
   resdata$label <- ifelse(resdata$gene %in% top_genes$gene,resdata$gene,"")
-  cols <- c("Nonsignificant" = "darkgrey", "padj < 0.05 & FC > 2" = "#e69f00", "padj < 0.05" = "#56b4e9", "FC > 2" = "#009e73")
-              
-              # Make a basic ggplot2 object
-              
+  cols <- c("Nonsignificant" = "darkgrey", "padj < 0.05 & FC >= 2" = "#e69f00", "padj < 0.05" = "#56b4e9", "FC >= 2" = "#009e73")
+
+# Make a basic ggplot2 object
+
 vol <- ggplot(resdata, aes(x = log2FoldChange, y = -log10(padj), colour = Legend))
 
-# inserting manual colors as per color pallette  with term "scale_colour_manual(values = cols)" below
+# inserting manual colors as per color pallette with term "scale_colour_manual(values = cols)" below
 
-vol +   
+vol +
   ggtitle(label = "Volcano Plot") +
   geom_point(size = 2.5, alpha = .99, na.rm = T)  +
   geom_text_repel(data=(resdata ), aes(x=resdata$log2FoldChange, y=-log10(padj),label=label),colour="black",point.padding = unit(1.6, "lines"))+
-  scale_color_manual(name="Differential Expression",values=cols)+
-  theme_bw(base_size = 14) + 
-  theme(legend.position = "right") + 
-  xlab(bquote(log[2](~.(condition1) / ~.(condition2)))) + 
+  scale_color_manual(name="",values=cols)+
+  theme_bw(base_size = 14) +
+  theme(legend.position = "bottom") +
+  xlab(bquote(log[2](~.(condition1) / ~.(condition2)))) +
   ylab(expression(-log[10]("pvalue"))) + # Change Y-Axis label
-  geom_hline(yintercept = -log10(0.05), colour="#990000", linetype="dashed") + geom_vline(xintercept = 1, colour="#990000", linetype="dashed") + geom_vline(xintercept = -1, colour="#990000", linetype="dashed") + 
+  geom_hline(yintercept = -log10(0.05), colour="#990000", linetype="dashed") + geom_vline(xintercept = 1, colour="#990000", linetype="dashed") + geom_vline(xintercept = -1, colour="#990000", linetype="dashed") +
   scale_y_continuous(trans = "log1p",breaks=c(1,10,100,1000))
-            
+
+}
+
+# Extract rownames and make it as new first column
+add_gene_name<-function(tab){
+  tab<-as.data.frame(tab)
+  tab$gene_name<-row.names(tab)
+  tab<-tab[, c(ncol(tab), 1:(ncol(tab)-1))]
+  return(tab)
 }
 
 args<-commandArgs(TRUE)
 
-
-count_filename<-args[1] #count table
-coldata_filename<-args[2] #sample description
+count_filename <- args[1] #count table
+coldata_filename <- args[2] #sample description
 outfolder <- args[3]
 projectname <- args[4]
 pthreads <- as.numeric(args[5])
 condition1 <- args[6]
 condition2 <-args[7]
-threshold<-as.numeric(args[8])
+threshold <- as.numeric(args[8])
 print(args)
 
 register(MulticoreParam(pthreads))
@@ -94,18 +101,31 @@ dds <- DESeqDataSetFromMatrix(countData = cts,
 
 dds <- DESeq(dds,betaPrior=TRUE,parallel=TRUE, BPPARAM=MulticoreParam(pthreads))
 res <- results(dds,parallel=TRUE, BPPARAM=MulticoreParam(pthreads),contrast=c("condition",condition1,condition2))
-resOrdered <- res[order(res$pvalue),]
+resOrdered <- res[order(res$padj, -abs(res$log2FoldChange), res$pvalue),]
 summary(res)
 
 TE_only<-resOrdered[grepl(":",rownames(resOrdered)),]
-
-
 RefSeq_only<-resOrdered[!rownames(resOrdered) %in% rownames(TE_only),]
 
-write.table(resOrdered,"DESeq2_all.txt",row.names=TRUE,col.names=TRUE,sep="\\t",quote=FALSE)
-write.table(TE_only,"DESeq2_TE_only.txt",row.names=TRUE,col.names=TRUE,sep="\\t",quote=FALSE)
+# Get raw and normalized counts
+counts_raw<-counts(dds, normalized=FALSE)
+counts_norm<-counts(dds, normalized=TRUE)
+colnames(counts_raw)<-paste(colnames(counts_raw), "rawCounts", sep=".")
+colnames(counts_norm)<-paste(colnames(counts_norm), "normCounts", sep=".")
+counts_raw<-add_gene_name(counts_raw)
+counts_norm<-add_gene_name(counts_norm)
+counts_all<-merge(x = counts_raw, y = counts_norm, by = "gene_name", all = TRUE)
 
-write.table(RefSeq_only,"DESeq2_RefSeq_only.txt",row.names=TRUE,col.names=TRUE,sep="\\t",quote=FALSE)
+resOrderedOut<-merge(x = add_gene_name(resOrdered), y = counts_all, by = "gene_name", all.x = TRUE)
+TE_onlyOut<-merge(x = add_gene_name(TE_only), y = counts_all, by = "gene_name", all.x = TRUE)
+RefSeq_onlyOut<-merge(x = add_gene_name(RefSeq_only), y = counts_all, by = "gene_name", all.x = TRUE)
+resOrderedOut<-resOrderedOut[order(resOrderedOut$padj, -abs(resOrderedOut$log2FoldChange), resOrderedOut$pvalue),]
+TE_onlyOut<-TE_onlyOut[order(TE_onlyOut$padj, -abs(TE_onlyOut$log2FoldChange), TE_onlyOut$pvalue),]
+RefSeq_onlyOut<-RefSeq_onlyOut[order(RefSeq_onlyOut$padj, -abs(RefSeq_onlyOut$log2FoldChange), RefSeq_onlyOut$pvalue),]
+
+write.table(resOrderedOut,"DESeq2_all.tsv",row.names=FALSE,col.names=TRUE,sep="\\t",quote=FALSE)
+write.table(TE_onlyOut,"DESeq2_TE_only.tsv",row.names=FALSE,col.names=TRUE,sep="\\t",quote=FALSE)
+write.table(RefSeq_onlyOut,"DESeq2_RefSeq_only.tsv",row.names=FALSE,col.names=TRUE,sep="\\t",quote=FALSE)
 
 
 #Count graphs
@@ -143,13 +163,13 @@ dev.off()
 #dev.off()
 
 #Volcano plots
-resSig<-res[ which(res$padj < .05), ]
+resSig<-res[ which(res$padj < 0.05), ]
 TESig<- TE_only[which(TE_only$padj < 0.05),]
 RefSeqSig<- RefSeq_only[which(RefSeq_only$padj < 0.05),]
 if (nrow(resSig) > 0) {
 #Volcano plots
 pdf("volcano_all.pdf")
-volcano_plot(res,condition1,condition2,threshold)
+print(volcano_plot(res,condition1,condition2,threshold))
 dev.off()
 
 
@@ -172,15 +192,15 @@ select <- order(rowMeans(counts(dds,normalized=TRUE)),
                 decreasing=TRUE)[1:threshold]
 df <- as.data.frame(colData(dds)[,"condition"])
 
-pdf("top100_heatmap_all_ntd.pdf")
+pdf(paste0("top", threshold, "_heatmap_all_ntd.pdf"))
 pheatmap(assay(ntd)[select,], cluster_rows=FALSE, show_rownames=FALSE,
          cluster_cols=FALSE, annotation_col=coldata)
 dev.off()
-pdf("top100_heatmap_all_vsd.pdf")
+pdf(paste0("top", threshold, "_heatmap_all_vsd.pdf"))
 pheatmap(assay(vsd)[select,], cluster_rows=FALSE, show_rownames=FALSE,
          cluster_cols=FALSE, annotation_col=coldata)
 dev.off()
-pdf("top100_heatmap_all_rld.pdf")
+pdf(paste0("top", threshold, "_heatmap_all_rld.pdf"))
 pheatmap(assay(rld)[select,], cluster_rows=FALSE, show_rownames=FALSE,
          cluster_cols=FALSE, annotation_col=coldata)
 dev.off()
@@ -199,7 +219,7 @@ pheatmap(sampleDistMatrix,
 dev.off()
 
 pdf("pca_all_vsd.pdf")
-plotPCA(vsd, intgroup=("condition"))
+print(plotPCA(vsd, intgroup=("condition")))
 dev.off()
 
 pdf("count_outliers_all.pdf")
@@ -214,7 +234,7 @@ dev.off()
 metadata(res)$alpha
 metadata(res)$filterThreshold
 pdf("independent_filtering_rejections_all")
-plot(metadata(res)$filterNumRej, 
+plot(metadata(res)$filterNumRej,
      type="b", ylab="number of rejections",
      xlab="quantiles of filter")
 lines(metadata(res)$lo.fit, col="red")
@@ -229,16 +249,15 @@ addmargins(table(filtering=(res$padj < .1),
 
 if (nrow(TESig) > 0) {
 pdf("volcano_TE_only.pdf")
-volcano_plot(TE_only,condition1,condition2,threshold)
+print(volcano_plot(TE_only,condition1,condition2,threshold))
 dev.off()
 }
 
 if (nrow(RefSeqSig) > 0) {
 pdf("volcano_RefSeq_only.pdf")
-volcano_plot(RefSeq_only,condition1,condition2,threshold)
+print(volcano_plot(RefSeq_only,condition1,condition2,threshold))
 dev.off()
 }
-
 
 
 
