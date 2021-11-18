@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Connect bluethooth headphones
+Comment=Connects bluetooth headphones as audio sink (a2dp) and sets is as default audio output
+Exec="/home/jan/tools/utils/connect-audio.sh"
+Terminal=false
+Type=Application
+Icon=/home/jan/tools/utils/hp-connect.png
+Categories=Utility;
