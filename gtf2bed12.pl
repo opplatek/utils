@@ -1,17 +1,17 @@
 #!/usr/bin/perl
 
 # Copyright (c) 2011 Erik Aronesty (erik@q32.com)
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,10 +19,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-# 
+#
 # ALSO, IT WOULD BE NICE IF YOU LET ME KNOW YOU USED IT.
 
 # Downloaded on 08142019 from https://github.com/ExpressionAnalysis/ea-utils/blob/master/clipper/gtf2bed
+# Takes transcripts and extracts the left-most and right-most positions as main BED coords (exons in extra columns)
+# To get 'true' GTF to BED (each row converted as-is) use convert2bed from BEDOPS
+#
 
 use Data::Dumper;
 use Getopt::Long;
@@ -72,11 +75,11 @@ while (<IN>) {
 	}
 }
 
-for $id ( 
+for $id (
 	# sort by chr then pos
 	sort {
-		$trans{$a}->[0] eq $trans{$b}->[0] ? 
-		$trans{$a}->[3] <=> $trans{$b}->[3] : 
+		$trans{$a}->[0] eq $trans{$b}->[0] ?
+		$trans{$a}->[3] <=> $trans{$b}->[3] :
 		$trans{$a}->[0] cmp $trans{$b}->[0]
 	} (keys(%trans)) ) {
 		my ($chr, undef, undef, undef, undef, undef, $dir, undef, $attr, undef, $cds, $cde) = @{$trans{$id}};
@@ -90,7 +93,7 @@ for $id (
 
 		my $beg = $ex[0][3];
 		my $end = $ex[-1][4];
-		
+
 		if ($dir eq '-') {
 			# swap
 			$tmp=$cds;
@@ -106,7 +109,7 @@ for $id (
 
 		# adjust start for bed
 		--$beg; --$cds;
-	
+
 		my $exn = @ex;												# exon count
 		my $exst = join ",", map {$_->[3]-$beg-1} @ex;				# exon start
 		my $exsz = join ",", map {$_->[4]-$_->[3]+1} @ex;			# exon size
