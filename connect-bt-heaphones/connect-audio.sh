@@ -56,6 +56,9 @@ function set_headphones_def_audio_a2dp() {
 
 function main() {
   local hp_mac=$(get_headphones_mac_address)
+  if [ "$hp_mac" == "" ]; then # Checks if hp are connected and connects them if regular bt connect doesn't work
+    ./connect-audio.py
+  fi
   set_headphones_profile_off
   sleep 2s
   disconnect_bluetooth_headphones ${hp_mac}
@@ -67,5 +70,4 @@ function main() {
   set_headphones_def_audio_a2dp
 }
 
-#python connect-audio.py # Checks if hp are connected and connects them if regular bt connect doesn't work
 main
