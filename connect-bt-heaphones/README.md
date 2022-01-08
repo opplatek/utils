@@ -4,4 +4,4 @@ Set of scripts stolen from other GitHub repos (`connect-audio.sh` from [here](ht
 
 `connect-audio.sh` fixes connection and sets the headphones as audio sink. However, headphones must be already connected. If they are not, use `python connect-audio.py` to connect it.
 
-You can also use `connect-headphones.desktop` to make a quick launcher desktop app.
+You can also use `connect-headphones.desktop` to make a quick launcher desktop app to connect the heapdhones and `set-headphones-a2dp.desktop` to set the connected headphones as default audio output with a2dp sink profile (copy the desktop files to `~/.local/share/application/`).
