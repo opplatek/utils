@@ -4,6 +4,10 @@
 #
 # https://bioinformatics.stackexchange.com/questions/9228/convert-paired-end-bam-into-a-single-end-bam-and-keep-all-the-reads
 #
+# NOTE: Doesn't work with pysam '0.12.0.1' but works with '0.15.3' (I didn't test any other)
+#	In '0.12.0.1' you will get error: "pysam AttributeError: attribute 'next_reference_name' objects is not writable"
+#	I guess you can just comment out the line in the code below to make it work with this pysam version
+#
 # First argument "first"|"second" - which read to keep
 # Second argument - input bam
 # Third argument - outpu bam
@@ -11,6 +15,9 @@
 
 import sys
 import pysam
+
+#import pkg_resources # to check package version in Python <3.8 https://stackoverflow.com/questions/20180543/how-to-check-the-version-of-python-modules
+#pkg_resources.get_distribution('pysam').version 
 
 paired =         1
 proper_pair =    2
