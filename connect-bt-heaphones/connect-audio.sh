@@ -17,7 +17,7 @@ function get_headphones_mac_address() {
   echo "${temp}"
 }
 
-function _control_bluethoot_headphones() {
+function _control_bluethooth_headphones() {
   local op=${1}
   local hp_mac=${2}
   echo -e "${op} ${hp_mac}\n quit" | bluetoothctl
@@ -25,12 +25,12 @@ function _control_bluethoot_headphones() {
 
 function disconnect_bluetooth_headphones() {
   local hp_mac=${1}
-  _control_bluethoot_headphones "disconnect" ${hp_mac}
+  _control_bluethooth_headphones "disconnect" ${hp_mac}
 }
 
 function connect_bluetooth_headphones() {
   local hp_mac=${1}
-  _control_bluethoot_headphones "connect" ${hp_mac}
+  _control_bluethooth_headphones "connect" ${hp_mac}
 }
 
 function _set_headphones_profile() {
